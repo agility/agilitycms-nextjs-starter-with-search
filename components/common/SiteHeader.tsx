@@ -4,6 +4,7 @@ import React, {useState} from "react"
 import Link from "next/link"
 import {IHeaderData} from "lib/cms-content/getHeaderContent"
 import {AgilityImage} from "@agility/nextjs"
+import SearchBar from "./SearchBar"
 
 interface Props {
 	header: IHeaderData | null
@@ -38,7 +39,12 @@ const SiteHeader = ({header}: Props) => {
 							<p className="font-bold text-xl text-secondary-500 ml-3 mt-2">{header.siteName}</p>
 						</Link>
 					</div>
-					<div className="-mr-2 -my-2 md:hidden">
+					<div className="flex-1">
+
+						<SearchBar />
+						
+					</div>
+					<div className="-mr-2 -my-2 md:hidden flex-1">
 						<button
 							onClick={() => setOpen(!open)}
 							aria-label="Toggle Menu"
