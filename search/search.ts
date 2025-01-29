@@ -74,15 +74,24 @@ async function loadIndexFromS3Bucket() {
 
 async function addPageToLocal(page: any) {
     try {
-        const fileName = page.path.replaceAll('/','-').replace('-','')
-        const file = path.join(__dirname, 'blob', `${fileName}.json`);
-        fs.writeFileSync(file, JSON.stringify(page, null, 2));
-    } catch {
-        console.error('Error saving page to local storage')
+
+        const fileName = page.path.replace(/\//g, '-').replace(/^-/, '');
+        const dirPath = path.join(__dirname, 'blob');
+        const filePath = path.join(dirPath, `${fileName}.json`);
+
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath);
+        }
+
+        fs.writeFileSync(filePath, JSON.stringify(page, null, 2));
+
+    } catch(error) {
+        console.error(error)
     }
 }
 
 async function addPageToVercelBlob(page: Page) {
+    
     
 //   const isDevMode = () => process.env.NODE_ENV === 'development';
 
