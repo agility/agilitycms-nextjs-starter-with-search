@@ -8,6 +8,10 @@ This starter is a [`Fork of our Next.js starter`](https://github.com/agility/agi
 
 [New to Agility CMS? Sign up for a FREE account](https://agilitycms.com/free)
 
+<img width="879" alt="Screenshot 2025-01-30 at 6 49 06 PM" src="https://github.com/user-attachments/assets/8e1f7d3c-0a95-4de7-a62c-bd6226ebbe19" />
+
+
+
 ## 💥 Flex Search 💥
 
 - The major difference in this Starter is the inclusion of;
