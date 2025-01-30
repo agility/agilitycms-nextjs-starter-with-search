@@ -4,6 +4,7 @@ This is sample Next.js starter site that uses Agility CMS and aims to be a found
 
 This starter also includes a Search component you can customize to your liking. 
 
+This starter is a Fork of our Next.js starter. 
 
 [New to Agility CMS? Sign up for a FREE account](https://agilitycms.com/free)
 
@@ -21,6 +22,10 @@ Set it to Receive Content Publish Events for `Production`
 Set it to Receive Content Save Events for `Dev, Preview`
 
 Your webhook url should be `yourwebsite.com/api/search`
+
+
+---
+
 
 ### Caching
 
