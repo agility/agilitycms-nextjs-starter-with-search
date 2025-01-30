@@ -15,6 +15,10 @@ This does not work on edge services.
 4. Azure Blob Storage
 @azure/storage-blob
 
+## Sourcing your BLOB data on page builds
+
+In this starter we've made a slight addition to `/app/[..slug]/page.tsx`
+
 
 
 ## Webhook Updates

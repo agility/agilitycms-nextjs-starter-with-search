@@ -193,13 +193,13 @@ export async function addPageToSearch(page: any){
     const allContent = await Promise.all(
         Object.entries(zones).flatMap(([zone, ContentZone]: [string, any]) => 
             ContentZone.map(async (module: any) => {
-                const contentItem = await getContentItem({
-                    contentID: module.item.contentid,
-                    locale: process.env.AGILITY_LOCALES
-                });
+                // const contentItem = await getContentItem({
+                //     contentID: module.item.contentid,
+                //     locale: process.env.AGILITY_LOCALES
+                // });
     
-                // you may need to adjust this to return your content model
-                return (contentItem as any)?.fields?.content || '';
+                // // you may need to adjust this to return your content model
+                // return (contentItem as any)?.fields?.content || '';
             })
         )
     );
