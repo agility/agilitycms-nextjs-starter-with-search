@@ -20,10 +20,7 @@ import {
 } from '@algolia/autocomplete-core'
 import { Dialog, DialogPanel, DialogBackdrop } from '@headlessui/react'
 import clsx from 'clsx'
-
 import {FaLink} from "react-icons/fa6"
-
-// import { navigation } from '@/components/Navigation'
 
 type Result = {
   url: string
@@ -93,7 +90,6 @@ function useAutocomplete({ close }: { close: () => void }) {
             const response = await fetch(`/api/search?query=${query}`)
             const items: Result[] = await response.json()
 
-            console.log('items', items)
             return items || []
           },
           getItemUrl({ item }) {
