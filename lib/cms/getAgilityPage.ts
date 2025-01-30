@@ -1,7 +1,6 @@
 import "server-only";
 import { getAgilityPageProps } from "@agility/nextjs/node";
 import { getAgilityContext } from "./useAgilityContext";
-import { addPageToSearch } from "search/search";
 
 export interface PageProps {
 	params: Promise<{ slug: string[] }>
@@ -26,8 +25,6 @@ export const getAgilityPage = async ({ params }: PageProps) => {
 			contentLinkDepth: 0
 		}
 	})
-
-	await addPageToSearch(page)
 
 	return page
 

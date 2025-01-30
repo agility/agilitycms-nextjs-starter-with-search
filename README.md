@@ -1,14 +1,26 @@
-# Agility CMS & Next.js Starter
+# Agility CMS & Next.js Starter w/ FlexSearch
 
 This is sample Next.js starter site that uses Agility CMS and aims to be a foundation for building sites using Next.js and Agility CMS.
 
-[Live Website Demo](https://agilitycms-nextjs-starter-blog.vercel.app/)
+This starter also includes a Search component you can customize to your liking. 
+
 
 [New to Agility CMS? Sign up for a FREE account](https://agilitycms.com/free)
 
-## 📢 UPDATED FOR NEXT.JS 15 📢
+## 💥 Flex Search 💥
 
-- We have updated this starter for Next.js 15.0.3. It is built on top of the [@agility/nextjs](https://www.npmjs.com/package/@agility/nextjs) npm package specialized for app router.
+- The major difference in this Starter is the inclusion of;
+  - `Search.tsx` component - this is a client side component rendering the UI.
+  - `/api/search/route.tsx` - this provides the FlexSearch index and webhook for rebuilding the search index
+
+### Search Webhook
+
+In your Agility CMS instance, you will also need to setup a webhook to rebuild the search index when new content is saved and published. 
+
+Set it to Receive Content Publish Events for `Production`
+Set it to Receive Content Save Events for `Dev, Preview`
+
+Your webhook url should be `yourwebsite.com/api/search`
 
 ### Caching
 
