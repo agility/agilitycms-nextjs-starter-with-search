@@ -21,16 +21,14 @@ import {
 import { Dialog, DialogPanel, DialogBackdrop } from '@headlessui/react'
 import clsx from 'clsx'
 
-// import { navigation } from '@/components/Navigation'
+import {FaLink} from "react-icons/fa6"
 
-import { search } from '../../search/search'
+// import { navigation } from '@/components/Navigation'
 
 type Result = {
   url: string
   title: string
-  pageTitle?: string
-  path?: string
-  section?: string
+  content: string
 }
 
 type EmptyObject = Record<string, never>
@@ -92,10 +90,10 @@ function useAutocomplete({ close }: { close: () => void }) {
           sourceId: 'documentation',
           async getItems() {
 
-            const items = await fetch(`/api/search?query=${query}`)
+            const response = await fetch(`/api/search?query=${query}`)
+            const items: Result[] = await response.json()
 
             console.log('items', items)
-            // const items = await search(query, { limit: 5 });
             return items || []
           },
           getItemUrl({ item }) {
@@ -164,12 +162,53 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-function HighlightQuery({ text, query }: { text: string; query: string }) {
+const getSnippetWithHighlight = (text: string, searchTerm: string, snippetLength: number = 60) => {
+  if (!searchTerm) return "";
+
+  const index = text.toLowerCase().indexOf(searchTerm.toLowerCase());
+  if (index === -1) return ""; // If no match found, return empty string
+
+  // Define snippet boundaries
+  let start = Math.max(index - snippetLength / 2, 0);
+  let end = Math.min(index + searchTerm.length + snippetLength / 2, text.length);
+
+  // Ensure we don't cut off words abruptly
+  while (start > 0 && text[start] !== " ") start--; // Move back to the nearest space
+  while (end < text.length && text[end] !== " ") end++; // Move forward to the nearest space
+
+  // Extract snippet
+  let snippet = text.slice(start, end);
+  if (start > 0) snippet = "... " + snippet; // Add leading ellipsis if text was cut
+  if (end < text.length) snippet = snippet + " ..."; // Add trailing ellipsis if text was cut
+
+  return snippet;
+};
+
+function HighlightContent({ text, query }: { text: string; query: string }) {
+
+  const truncatedText = getSnippetWithHighlight(text, query, 200);
+
+  if(!truncatedText && truncatedText !== '') return null;
   return (
     // @ts-ignore
     // throwing ts errors
     <Highlighter
-      highlightClassName="underline bg-transparent text-emerald-500"
+      highlightClassName="underline bg-transparent text-yellow-500 truncate"
+      searchWords={[query]}
+      autoEscape={true}
+      textToHighlight={truncatedText}
+    />
+  )
+}
+function HighlightQuery({ text, query }: { text: string; query: string }) {
+
+  // const truncatedText = getSnippetWithHighlight(text, query, 200);
+
+  return (
+    // @ts-ignore
+    // throwing ts errors
+    <Highlighter
+      highlightClassName="underline bg-transparent text-yellow-500 truncate"
       searchWords={[query]}
       autoEscape={true}
       textToHighlight={text}
@@ -196,11 +235,11 @@ function SearchResult({
   let sectionTitle = result.title
 
 
-  let hierarchyString = [result?.path?.replaceAll('/',' > ').replace('>',' ').replaceAll('-',' ')].filter(
-    (x): x is string => typeof x === 'string',
-  )
+  // let hierarchyString = [result?.path?.replaceAll('/',' > ').replace('>',' ').replaceAll('-',' ')].filter(
+  //   (x): x is string => typeof x === 'string',
+  // )
 
-  let hierarchy = [result?.path].filter(
+  let hierarchy = [result?.url].filter(
     (x): x is string => typeof x === 'string',
   )
 
@@ -218,18 +257,35 @@ function SearchResult({
         source: collection.source,
       })}
     >
+     
       <div
         id={`${id}-title`}
         aria-hidden="true"
-        className="text-sm font-medium text-zinc-900 group-aria-selected:text-emerald-500 dark:text-white"
+        className="flex flex-row items-center text-sm font-bold text-zinc-900 group-aria-selected:text-zinc-500 dark:text-white mb-2"
       >
-        <HighlightQuery text={result.title} query={query} />
+
+<div className=''>
+      <FaLink className='h-5 w-5 mr-2 text-yellow-500' />
       </div>
+       <HighlightQuery text={result.title} query={query} />
+      </div>
+
+      <div
+      id={`${id}-content`}
+      aria-hidden="true"
+      className="text-sm font-light text-zinc-900 group-aria-selected:text-zinc-500 dark:text-white"
+  
+      >
+
+        <HighlightContent text={result.content} query={query} />
+
+      </div>
+
       {hierarchy.length > 0 && (
         <div
           id={`${id}-hierarchy`}
           aria-hidden="true"
-          className="mt-1 capitalize truncate whitespace-nowrap text-2xs text-zinc-500"
+          className="mt-1 capitalize truncate whitespace-nowrap text-sm underline text-zinc-500/50"
         >
           {hierarchy.map((item, itemIndex, items) => (
             <Fragment key={itemIndex}>
@@ -237,8 +293,8 @@ function SearchResult({
               <span
                 className={
                   itemIndex === items.length - 1
-                    ? 'sr-only'
-                    : 'mx-2 text-zinc-300 dark:text-zinc-700'
+                    ? 'sr-only text-sm'
+                    : 'mx-2 text-zinc-300 dark:text-zinc-700 text-sm underline'
                 }
               >
                 /
@@ -260,6 +316,8 @@ function SearchResults({
   query: string
   collection: AutocompleteCollection<Result>
 }) {
+
+
   if (collection.items.length === 0) {
     return (
       <div className="p-6 text-center">
@@ -282,7 +340,7 @@ function SearchResults({
         // console.log('result', result)
         return (
         <SearchResult
-          key={result.url}
+          key={result.url || resultIndex}
           result={result}
           resultIndex={resultIndex}
           autocomplete={autocomplete}
@@ -335,7 +393,7 @@ const SearchInput = forwardRef<
       />
       {autocompleteState.status === 'stalled' && (
         <div className="absolute inset-y-0 right-3 flex items-center">
-          <LoadingIcon className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-emerald-400" />
+          <LoadingIcon className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-gray-400" />
         </div>
       )}
     </div>
@@ -419,7 +477,7 @@ function SearchDialog({
               />
               <div
                 ref={panelRef}
-                className="border-t border-zinc-200 bg-white empty:hidden dark:border-zinc-100/5 dark:bg-white/2.5"
+                className="border-t border-zinc-200 bg-black empty:hidden dark:border-zinc-100/5 dark:bg-white/2.5"
                 {...autocomplete.getPanelProps({})}
               >
                 {autocompleteState.isOpen && (
@@ -477,7 +535,7 @@ export function Search() {
   }, [])
 
   return (
-    <div className="block lg:block lg:max-w-md lg:flex-auto border border-zinc-100 rounded-md dark:border-zinc-800">
+    <div className="block lg:block lg:max-w-md lg:flex-auto border border-zinc-100 rounded-full dark:border-zinc-800">
       <button
         type="button"
         className="hidden h-8 w-full items-center gap-2 rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none lg:flex dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20"

@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 
 
 // Create the search index
-let index: FlexSearch.Index | null = null;
-let pages: { id: number; title: string; content: string; slug: string }[] = [];
+let index: FlexSearch.Document<{ id: number; title: string; content:string, url: string }, string[]> | null = null;
+let pages: { id: number; title: string; content:string, url: string }[] = [];
 
 // Function to load the sitemap data once
 async function loadSitemapData() {
@@ -30,7 +30,8 @@ async function loadSitemapData() {
 		languageCode: process.env.AGILITY_LOCALES,
 	});	
 	
-	const pagePromises = Object.keys(sitemap).map(async (path, index) => {
+	const pagePromises = Object.keys(sitemap).map(async (path) => {
+		
 		const data = await api.getPageByPath({
 			pagePath: path,
 			languageCode: process.env.AGILITY_LOCALES,
@@ -40,34 +41,62 @@ async function loadSitemapData() {
 
 		const { sitemapNode } = data;
 
-		// this gets all the content from the page zones
 		const pageContent = Object.keys(data.page.zones).map((zoneKey) => {
 			const zone = data.page.zones[zoneKey];
+
 			return zone.map((module: any) => {
-				const content = Object.values(module.item.fields).reduce((acc: string, field: any) => {
-					if (typeof field === 'string') {
-						// Strip HTML tags and remove newlines
-						const strippedContent = field.replace(/<\/?[^>]+(>|$)/g, "").replace(/[\r\n]+/g, " ");
-						return acc + ' ' + strippedContent;
-					}
-					return acc;
-				}, '');
-				return content;
-			}).join(' ');
-		}).join(' ');
+
+				// where to get the content in each zone.
+
+				let response = '';
+				if(module.module === 'PostDetails'){
+					response = data.contentItem.fields.content
+				}
+
+				if(module.module === 'RichTextArea'){
+				    response = module.item.fields.textblob
+				}
+
+				if(module.module === 'TextBlockWithImage'){
+					response = module.item.fields.content
+				}
+
+				// we aren't going to include headings
+
+				const strippedContent = response.replace(/<\/?[^>]+(>|$)/g, "").replace(/[\r\n]+/g, " ");
+				if(strippedContent !== ''){
+					return strippedContent;
+				}
+
+			}).join(' '); // Join modules into a single string
+		}).join(' '); // Join zones into a single string
 
 		return {
-			id: sitemapNode.pageID,
+			id: sitemapNode.path,
 			title: sitemapNode.title,
 			content: pageContent,
-			slug: sitemapNode.path,
+			url: sitemapNode.path,
 		}
 	});
 
 	pages = await Promise.all(pagePromises);
-	index = new FlexSearch.Index();
-    pages.forEach(({ id, title, content }) => index?.add(id, `${title} ${content}`));
+	index = new FlexSearch.Document({
+		tokenize: 'full',
+		document: {
+			id: "id",
+			index: ["id", "title", "content", "url"],
+			store: ["id", "title","content", "url"],
+		},
+		context: {
+			resolution: 9,
+			depth: 2,
+			bidirectional: true,
+		},
+	});
+	
+    pages.forEach((page) => index?.update(page));
 
+	console.log("Sitemap data loaded successfully");
 }
 
 // Load data when the API server starts
@@ -87,9 +116,12 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Query parameter is required" }, { status: 400 });
     }
 
-    const results = index!.search(query).map((id) => pages.find((page) => page.id === id));
+	const results = Array.from(new Set(index!.search(query, {enrich:false,  index: ["title","content","url"] })
+		.flatMap((result:any) => result.result)))
+		.map((id: number) => pages.find((page) => page.id === id));
 
-    return NextResponse.json(results);
+
+    return NextResponse.json(results.flat());
 }
 
 export async function POST() {
