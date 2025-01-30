@@ -2,7 +2,7 @@
 
 This is sample Next.js starter site that uses Agility CMS and aims to be a foundation for building sites using Next.js and Agility CMS.
 
-This starter also includes a Search component you can customize to your liking. 
+This starter also includes a Search component you can easily customize. 
 
 This starter is a [`Fork of our Next.js starter`](https://github.com/agility/agilitycms-nextjs-starter). 
 

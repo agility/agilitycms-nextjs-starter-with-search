@@ -2,17 +2,13 @@ import FlexSearch from "flexsearch";
 import agility from '@agility/content-fetch'
 import { NextResponse } from "next/server";
 
-
 // Create the search index
 let index: FlexSearch.Document<{ id: number; title: string; content:string, url: string }, string[]> | null = null;
 let pages: { id: number; title: string; content:string, url: string }[] = [];
 
-// Function to load the sitemap data once
 async function loadSitemapData() {
 
 	if (index !== null) return; // Prevent reloading on every request
-
-    console.log("Loading sitemap data...");
 
 	const isDevelopmentMode = process.env.NODE_ENV === "development"
 	const isPreview = isDevelopmentMode
@@ -46,8 +42,6 @@ async function loadSitemapData() {
 
 			return zone.map((module: any) => {
 
-				// where to get the content in each zone.
-
 				let response = '';
 				if(module.module === 'PostDetails'){
 					response = data.contentItem.fields.content
@@ -60,8 +54,6 @@ async function loadSitemapData() {
 				if(module.module === 'TextBlockWithImage'){
 					response = module.item.fields.content
 				}
-
-				// we aren't going to include headings
 
 				const strippedContent = response.replace(/<\/?[^>]+(>|$)/g, "").replace(/[\r\n]+/g, " ");
 				if(strippedContent !== ''){
@@ -84,8 +76,8 @@ async function loadSitemapData() {
 		tokenize: 'full',
 		document: {
 			id: "id",
-			index: ["id", "title", "content", "url"],
-			store: ["id", "title","content", "url"],
+			index: ["title", "content", "url"],
+			store: ["title","content", "url"],
 		},
 		context: {
 			resolution: 9,
@@ -116,24 +108,19 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Query parameter is required" }, { status: 400 });
     }
 
-	const results = Array.from(new Set(index!.search(query, {enrich:false,  index: ["title","content","url"] })
-		.flatMap((result:any) => result.result)))
-		.map((id: number) => pages.find((page) => page.id === id));
-
+	const results = Array.from(new Set(index!.search(query, {index: ["title","content","url"] })
+	.flatMap((result:any) => result.result)))
+	.map((id: number) => pages.find((page) => page.id === id));
 
     return NextResponse.json(results.flat());
 }
 
 export async function POST() {
-
 	// this is to be used for the webhook to trigger a rebuild of the search index
-
     try {
         index = null; // Reset index
         await loadSitemapData(); // Rebuild index
 		return NextResponse.json({ message: "Index updated successfully" });
-
-
     } catch (error) {
         console.error("Error updating index:", error);
         return NextResponse.json({ error: "Failed to update index" }, { status: 500 });
