@@ -27,11 +27,21 @@ Set it to Receive Content Save Events for `Dev, Preview`
 
 Your webhook url should be `yourwebsite.com/api/search`
 
-
 ### Demo
 
 To demo our Search Component, you can visit our hosted instance
 [https://agilitycms-nextjs-starter-with-search.publishwithagility.com](https://agilitycms-nextjs-starter-with-search.publishwithagility.com)
+
+### Caveats
+The search index persists in memory if using a long running server, but when using an Edge network like Vercel, the edge functions don't persist memory between requests. This means every time a user performs a search, that the search index needs to be rebuilt. This can lead to performance issues especially for larger sites where it takes longer to rebuild the index. 
+
+In the event you are using Vercel and need to persist your search index, we recommend using Vercel Blob storage or a blob storage provider of your choice. 
+
+You can easily import and export your search index using FlexSearch's built in functions. 
+
+```
+const indexData = index.export();
+```
 
 
 ---
