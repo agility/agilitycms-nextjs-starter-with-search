@@ -28,6 +28,12 @@ Set it to Receive Content Save Events for `Dev, Preview`
 Your webhook url should be `yourwebsite.com/api/search`
 
 
+### Demo
+
+To demo our Search Component, you can visit our hosted instance
+[https://agilitycms-nextjs-starter-with-search.publishwithagility.com](https://agilitycms-nextjs-starter-with-search.publishwithagility.com)
+
+
 ---
 
 
