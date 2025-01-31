@@ -4,7 +4,6 @@ import React, {useState} from "react"
 import Link from "next/link"
 import {IHeaderData} from "lib/cms-content/getHeaderContent"
 import {AgilityImage} from "@agility/nextjs"
-import SearchBar from "./SearchBar"
 import { Search } from "./Search"
 
 interface Props {
@@ -42,7 +41,6 @@ const SiteHeader = ({header}: Props) => {
 					</div>
 					<div className="flex-1">
 						<Search />
-						{/* <SearchBar /> */}
 						
 					</div>
 					<div className="-mr-2 -my-2 md:hidden flex-1">
