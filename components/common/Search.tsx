@@ -494,6 +494,7 @@ function SearchDialog({
 
 function useSearchProps() {
   let buttonRef = useRef<React.ElementRef<'button'>>(null)
+  let buttonRef2 = useRef<React.ElementRef<'button'>>(null)
   let [open, setOpen] = useState(false)
 
   return {
@@ -509,7 +510,9 @@ function useSearchProps() {
         (open: boolean) => {
           let { width = 0, height = 0 } =
             buttonRef.current?.getBoundingClientRect() ?? {}
+
           if (!open || (width !== 0 && height !== 0)) {
+            console.log('open the search')
             setOpen(open)
           }
         },
@@ -524,6 +527,7 @@ export function Search() {
   let [modifierKey, setModifierKey] = useState<string>()
   let { buttonProps, dialogProps } = useSearchProps()
 
+
   useEffect(() => {
     setModifierKey(
       /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl ',
@@ -531,10 +535,10 @@ export function Search() {
   }, [])
 
   return (
-    <div className="block lg:block lg:max-w-md lg:flex-auto border border-zinc-100 rounded-full dark:border-zinc-800">
+    <div className="block lg:block lg:max-w-md lg:flex-auto justify-end">
       <button
         type="button"
-        className="hidden h-8 w-full items-center gap-2 rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none lg:flex dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20"
+        className="hidden h-8 w-full  border border-zinc-100 rounded-full dark:border-zinc-800 items-center gap-2 rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none lg:flex dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20"
         {...buttonProps}
       >
         <SearchIcon className="h-5 w-5 stroke-current" />
@@ -562,7 +566,7 @@ export function MobileSearch() {
         aria-label="Find something..."
         {...buttonProps}
       >
-        <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white" />
+        <SearchIcon className="h-5 w-5 stroke-zinc-900" />
       </button>
       <Suspense fallback={null}>
         <SearchDialog className="lg:hidden" {...dialogProps} />

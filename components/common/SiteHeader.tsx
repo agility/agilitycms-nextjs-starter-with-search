@@ -4,7 +4,7 @@ import React, {useState} from "react"
 import Link from "next/link"
 import {IHeaderData} from "lib/cms-content/getHeaderContent"
 import {AgilityImage} from "@agility/nextjs"
-import { Search } from "./Search"
+import { MobileSearch, Search } from "./Search"
 
 interface Props {
 	header: IHeaderData | null
@@ -39,9 +39,11 @@ const SiteHeader = ({header}: Props) => {
 							<p className="font-bold text-xl text-secondary-500 ml-3 mt-2">{header.siteName}</p>
 						</Link>
 					</div>
-					<div className="flex-1">
-						<Search />
+					<div className="flex-1 w-full justify-end flex">
 						
+						<Search />	
+
+						<MobileSearch />					
 					</div>
 					<div className="-mr-2 -my-2 md:hidden flex-1">
 						<button
