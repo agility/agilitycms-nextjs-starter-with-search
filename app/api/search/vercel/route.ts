@@ -13,7 +13,6 @@ let pages: { id: number; title: string; content: string; url: string }[] = [];
 const isDevMode = () => process.env.NODE_ENV === "development";
 
 async function deleteAllBlobs(prefix: string) {
-  console.log("Deleting all blobs with prefix:", prefix);
   let cursor;
   do {
     const listResult: any = await list({
@@ -42,14 +41,11 @@ async function deleteAllBlobs(prefix: string) {
 
 async function saveSearchIndex() {
   if (index) {
-    console.log("Saving search index to Blob");
     const prefix = "search-index";
     await deleteAllBlobs(prefix);
 
     await index.export(async (key, data) => {
-      console.log("saving key", key);
-      console.log("saving data", data);
-
+      
       try {
         await put(`${prefix}/${key}.json`, JSON.stringify(data ?? null), {
           access: "public",
@@ -66,129 +62,110 @@ async function saveSearchIndex() {
 }
 
 async function loadSearchIndex() {
-  console.log("Loading search index from Blob");
-  const prefix = "search-index";
-  const listData = await list({
-    prefix,
-    token: isDevMode()
-      ? process.env.DEV_BLOB_READ_WRITE_TOKEN
-      : process.env.BLOB_READ_WRITE_TOKEN,
-  });
-
-  // if there's no data in blob storage, rebuild the index from the sitemap
-  if (listData.blobs.length === 0) {
-    console.log("No search index found in Blob");
-    await loadSitemapData().catch(console.error);
+	if (index) return; // Prevent unnecessary reloading
+  
+	const prefix = "search-index";
+	const listData = await list({
+	  prefix,
+	  token: isDevMode()
+		? process.env.DEV_BLOB_READ_WRITE_TOKEN
+		: process.env.BLOB_READ_WRITE_TOKEN,
+	});
+  
+	if (listData.blobs.length === 0) {
+	  await loadSitemapData(); // Only rebuild if completely missing
+	  return;
+	}
+  
+	index = new FlexSearch.Document({
+	  tokenize: "full",
+	  document: {
+		id: "id",
+		index: ["title", "content", "url"],
+		store: ["title", "content", "url"],
+	  },
+	  context: {
+		resolution: 9,
+		depth: 2,
+		bidirectional: true,
+	  },
+	});
+  
+	// Use `Promise.all()` to fetch blobs in parallel
+	await Promise.all(
+	  listData.blobs.map(async (blob) => {
+		const key = blob.pathname.replace("search-index/", "").replace(".json", "");
+		const blobData = await fetch(blob.url);
+		const response = await blobData.json();
+		if (response) {
+		  index?.import(key, response);
+		}
+	  })
+	);
   }
 
-  // if no index exists, create a new one
-  if (!index) {
-    index = new FlexSearch.Document({
-      tokenize: "full",
-      document: {
-        id: "id",
-        index: ["title", "content", "url"],
-        store: ["title", "content", "url"],
-      },
-      context: {
-        resolution: 9,
-        depth: 2,
-        bidirectional: true,
-      },
-    });
+  async function loadSitemapData() {
+	const isPreview = process.env.NODE_ENV === "development";
+	const apiKey = isPreview
+	  ? process.env.AGILITY_API_PREVIEW_KEY
+	  : process.env.AGILITY_API_FETCH_KEY;
+  
+	const api = agility.getApi({
+	  guid: process.env.AGILITY_GUID,
+	  apiKey,
+	  isPreview,
+	});
+  
+	const sitemap = await api.getSitemapFlat({
+	  channelName: process.env.AGILITY_SITEMAP || "website",
+	  languageCode: process.env.AGILITY_LOCALES,
+	});
+  
+	const pagePromises = Object.keys(sitemap).map(async (path) => {
+	  try {
+		const data = await api.getPageByPath({
+		  pagePath: path,
+		  languageCode: process.env.AGILITY_LOCALES,
+		  channelName: process.env.AGILITY_SITEMAP || "website",
+		  contentLinkDepth: 4,
+		});
+  
+		const { sitemapNode } = data;
+  
+		const pageContent = Object.keys(data.page.zones)
+		  .flatMap((zoneKey) => {
+			return data.page.zones[zoneKey].map((module: any) => {
+			  if (module.module === "PostDetails") return data.contentItem.fields.content;
+			  if (module.module === "RichTextArea") return module.item.fields.textblob;
+			  if (module.module === "TextBlockWithImage") return module.item.fields.content;
+			  return "";
+			});
+		  })
+		  .join(" ")
+		  .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags
+		  .replace(/[\r\n]+/g, " ");
+  
+		return {
+		  id: sitemapNode.path,
+		  title: sitemapNode.title,
+		  content: pageContent,
+		  url: sitemapNode.path,
+		};
+	  } catch (error) {
+		console.error(`Failed to fetch page: ${path}`, error);
+		return null; // Prevent crash on error
+	  }
+	});
+  
+	const results = await Promise.allSettled(pagePromises);
+	pages = results
+	  .filter((r) => r.status === "fulfilled" && r.value)
+	  .map((r: any) => r.value);
+  
+	pages.forEach((page) => index?.add(page));
+  
+	await saveSearchIndex();
   }
-
-  // if no Blob data has been written yet, fetch the site data
-
-  for (const blob of listData.blobs) {
-    const key = blob.pathname.replace("search-index/", "").replace(".json", "");
-    const blobData = await fetch(blob.url);
-    const response = await blobData.json();
-    if (response) {
-      index.import(key, response);
-    }
-  }
-
-}
-
-async function loadSitemapData() {
-
-  const isDevelopmentMode = process.env.NODE_ENV === "development";
-  const isPreview = isDevelopmentMode;
-
-  const apiKey = isPreview
-    ? process.env.AGILITY_API_PREVIEW_KEY
-    : process.env.AGILITY_API_FETCH_KEY;
-
-  const api = agility.getApi({
-    guid: process.env.AGILITY_GUID,
-    apiKey,
-    isPreview,
-  });
-
-  const sitemap = await api.getSitemapFlat({
-    channelName: process.env.AGILITY_SITEMAP || "website",
-    languageCode: process.env.AGILITY_LOCALES,
-  });
-
-  console.log("Sitemap->", sitemap);
-
-  const pagePromises = Object.keys(sitemap).map(async (path) => {
-    const data = await api.getPageByPath({
-      pagePath: path,
-      languageCode: process.env.AGILITY_LOCALES,
-      channelName: process.env.AGILITY_SITEMAP || "website",
-      contentLinkDepth: 4,
-    });
-
-    const { sitemapNode } = data;
-
-    const pageContent = Object.keys(data.page.zones)
-      .map((zoneKey) => {
-        const zone = data.page.zones[zoneKey];
-
-        return zone
-          .map((module: any) => {
-            let response = "";
-            if (module.module === "PostDetails") {
-              response = data.contentItem.fields.content;
-            }
-
-            if (module.module === "RichTextArea") {
-              response = module.item.fields.textblob;
-            }
-
-            if (module.module === "TextBlockWithImage") {
-              response = module.item.fields.content;
-            }
-
-            const strippedContent = response
-              .replace(/<\/?[^>]+(>|$)/g, "")
-              .replace(/[\r\n]+/g, " ");
-            if (strippedContent !== "") {
-              return strippedContent;
-            }
-          })
-          .join(" "); // Join modules into a single string
-      })
-      .join(" "); // Join zones into a single string
-
-
-	  console.log("page->", sitemapNode.path);
-    return {
-      id: sitemapNode.path,
-      title: sitemapNode.title,
-      content: pageContent,
-      url: sitemapNode.path,
-    };
-  });
-
-  pages = await Promise.all(pagePromises);
-  pages.forEach((page) => index?.add(page));
-
-  await saveSearchIndex();
-
-}
 
 // Load data when the API server starts
 // loadSitemapData().catch(console.error);
@@ -203,7 +180,6 @@ export async function GET(req: Request) {
   const query = searchParams.get("query");
 
   if (!index) {
-    console.log("Search index is empty...");
     await loadSearchIndex();
   }
 
