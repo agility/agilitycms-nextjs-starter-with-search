@@ -1,3 +1,7 @@
+export const config = {
+	runtime: "edge",
+  };
+  
 import FlexSearch from "flexsearch";
 import agility from "@agility/content-fetch";
 import { NextResponse } from "next/server";
@@ -176,7 +180,7 @@ async function loadSearchIndex() {
 // we don't want to automatically load the sitemapdata, only if no index is present
 
 // automatically load the search index on the first request
-loadSearchIndex().catch(console.error);
+// loadSearchIndex().catch(console.error);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
