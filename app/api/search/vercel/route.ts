@@ -9,6 +9,7 @@ let index: FlexSearch.Document<
   string[]
 > | null = null;
 let pages: { id: number; title: string; content: string; url: string }[] = [];
+let isIndexLoaded = false;
 
 const isDevMode = () => process.env.NODE_ENV === "development";
 
@@ -62,7 +63,7 @@ async function saveSearchIndex() {
 }
 
 async function loadSearchIndex() {
-	if (index) return; // Prevent unnecessary reloading
+	if (isIndexLoaded && index) return;
   
 	const prefix = "search-index";
 	const listData = await list({
@@ -102,6 +103,8 @@ async function loadSearchIndex() {
 		}
 	  })
 	);
+
+	isIndexLoaded = true;
   }
 
   async function loadSitemapData() {
@@ -188,6 +191,10 @@ export async function GET(req: Request) {
       { error: "Query parameter is required" },
       { status: 400 }
     );
+  }
+
+  if (!isIndexLoaded) {
+    await loadSearchIndex();
   }
 
   const search = index?.search({ query, enrich: true });
