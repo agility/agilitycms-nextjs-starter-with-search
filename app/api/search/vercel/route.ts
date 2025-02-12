@@ -182,9 +182,15 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("query");
 
-  if (!index) {
-    await loadSearchIndex();
-  }
+  const start = Date.now();
+  console.log(`[DEBUG] Start request at ${new Date().toISOString()}`);
+
+
+//   if (!index) {
+// 	console.log(`[DEBUG] Index not loaded, loading now...`);
+//     await loadSearchIndex();
+//   }
+
 
   if (!query) {
     return NextResponse.json(
@@ -194,8 +200,13 @@ export async function GET(req: Request) {
   }
 
   if (!isIndexLoaded) {
+	console.log(`[DEBUG] Index not loaded, loading now...`);
     await loadSearchIndex();
   }
+
+  const mid = Date.now();
+  console.log(`[DEBUG] Search index loaded in ${mid - start}ms`);
+
 
   const search = index?.search({ query, enrich: true });
 
@@ -210,6 +221,10 @@ export async function GET(req: Request) {
   const uniqueResults = Array.from(
     new Map(results.map((item) => [item?.url, item])).values()
   ) || [];
+
+  const end = Date.now();
+  console.log(`[DEBUG] Search completed in ${end - mid}ms`);
+  console.log(`[DEBUG] Total request time: ${end - start}ms`);
 
   return NextResponse.json(uniqueResults);
 }
