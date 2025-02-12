@@ -131,6 +131,8 @@ async function loadSitemapData() {
     languageCode: process.env.AGILITY_LOCALES,
   });
 
+  console.log("Sitemap->", sitemap);
+
   const pagePromises = Object.keys(sitemap).map(async (path) => {
     const data = await api.getPageByPath({
       pagePath: path,
@@ -171,6 +173,8 @@ async function loadSitemapData() {
       })
       .join(" "); // Join zones into a single string
 
+
+	  console.log("page->", sitemapNode.path);
     return {
       id: sitemapNode.path,
       title: sitemapNode.title,
