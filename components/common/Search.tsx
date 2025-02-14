@@ -87,9 +87,7 @@ function useAutocomplete({ close }: { close: () => void }) {
           sourceId: 'documentation',
           async getItems() {
 
-            // for the sake of this starter working both locally and in Vercel
-            const isVercel = process?.env?.NEXT_PUBLIC_VERCEL_ENV === 'production';
-            const response = await fetch(isVercel ? `/api/search/vercel?query=${query}` : `/api/search?query=${query}`);
+            const response = await fetch(`/api/search?query=${query}`);
             const items: Result[] = await response.json()
 
             return items || []
